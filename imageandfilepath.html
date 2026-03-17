@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All Goods.</title>
+<style>
+body {font-family: Arial; margin:0; background:#f5f5f5;}
+header {background:#ee4d2d; color:white; padding:15px; text-align:center;}
+nav {display:flex; justify-content:space-between; align-items:center; background:#ff7337; padding:10px 15px;}
+nav a {color:white; text-decoration:none; margin:0 10px; font-weight:bold;}
+.container {padding:20px;}
+.products {display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:15px;}
+.product {background:white; border-radius:8px; padding:10px; text-align:center; box-shadow:0 2px 5px rgba(0,0,0,0.1);} 
+.product img {width:100%; height:160px; object-fit:cover; border-radius:5px;}
+button {background:#ee4d2d; color:white; padding:6px; border:none; cursor:pointer; border-radius:4px;}
+input, select, textarea {padding:6px; margin:5px 0; width:100%;}
+footer {background:#222; color:white; text-align:center; padding:10px; margin-top:20px;}
+.hidden {display:none;}
+.auth {color:white; cursor:pointer;}
+.modal {position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; justify-content:center; align-items:center;}
+.modal-content {background:white; padding:20px; width:300px; border-radius:8px;}
+</style>
+</head>
+<body>
+
+<header>
+<h1>All Goods.</h1>
+<p>Your One-Stop Clothing Shop</p>
+</header>
+
+<nav>
+<div>
+<a href="#">Home</a>
+<a href="#products">Products</a>
+<a href="#about">About</a>
+<a href="#contact">Contact</a>
+<a href="#cart">Cart (<span id="cart-count">0</span>)</a>
+</div>
+<div class="auth" onclick="openLogin()">Login / Signup</div>
+</nav>
+
+<div class="container">
+
+<h3>Search</h3>
+<input type="text" id="search" placeholder="Search..." onkeyup="searchProducts()">
+
+<h3>Categories</h3>
+<select id="categoryFilter" onchange="filterProducts()">
+<option value="all">All</option>
+<option value="shirts">Shirts</option>
+<option value="pants">Pants</option>
+<option value="shoes">Shoes</option>
+</select>
+
+<h2 id="products">Products</h2>
+<div class="products" id="productList"></div>
+
+<h2>Cart</h2>
+<ul id="cart"></ul>
+<button onclick="checkout()">Checkout</button>
+
+<h2>Order Status</h2>
+<p id="orderStatus">No orders yet.</p>
+
+<h2>Suppliers</h2>
+<ul>
+<li>Urban Wear Ltd.</li>
+<li>Fashion Hub Co.</li>
+<li>StreetStyle Inc.</li>
+</ul>
+
+<h2>Reviews</h2>
+<textarea id="review" placeholder="Write feedback..."></textarea>
+<button onclick="submitReview()">Submit</button>
+<ul id="reviews"></ul>
+
+<h2 id="about">About</h2>
+<p>All Goods offers trendy fashion at affordable prices.</p>
+
+<div class="hidden">
+<h2>CTA</h2>
+<p>Shop Now!</p>
+</div>
+
+<h2 id="contact">Contact</h2>
+<p>Email: support@allgoods.com</p>
+<p>Phone: +63 912 345 6789</p>
+
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="modal" id="loginModal">
+<div class="modal-content">
+<h3>Login</h3>
+<input type="text" placeholder="Username">
+<input type="password" placeholder="Password">
+<button onclick="closeLogin()">Login</button>
+<button onclick="closeLogin()">Signup</button>
+</div>
+</div>
+
+<footer>
+<p>&copy; 2026 All Goods.</p>
+</footer>
+
+<script>
+let products = [
+{name:"Leather Jacket", category:"shirts", price:499, img:"https://images.unsplash.com/photo-1520975954732-35dd22299614?auto=format&fit=crop&w=400&q=80"},
+{name:"Graphic Tee", category:"shirts", price:699, img:"https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=400&q=80"},
+{name:"polo shirt", category:"shirts", price:899, img:"https://images.unsplash.com/photo-1602810319428-019690571b5b?auto=format&fit=crop&w=400&q=80"},
+{name:"Denim Jeans", category:"pants", price:999, img:"https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=400&q=80"},
+{name:"Jogger Pants", category:"pants", price:799, img:"https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=400&q=80"},
+{name:"Shorts", category:"pants", price:499, img:"https://images.unsplash.com/photo-1591195853828-11db59a44f6b?auto=format&fit=crop&w=400&q=80"},
+{name:"Polo", category:"shirts", price:1099, img:"https://images.unsplash.com/photo-1603252109303-2751441dd157?auto=format&fit=crop&w=400&q=80"},
+{name:"Sneakers", category:"shoes", price:1499, img:"https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=400&q=80"},
+{name:"Running Shoes", category:"shoes", price:1699, img:"https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?auto=format&fit=crop&w=400&q=80"},
+];
+
+let cart = [];
+
+function displayProducts(list) {
+let html = "";
+list.forEach((p,i)=>{
+html += `<div class='product'>
+<img src='${p.img}'>
+<h4>${p.name}</h4>
+<p>₱${p.price}</p>
+<button onclick='addToCart(${i})'>Add to Cart</button>
+</div>`;
+});
+document.getElementById("productList").innerHTML = html;
+}
+
+function searchProducts(){
+let val = document.getElementById("search").value.toLowerCase();
+let filtered = products.filter(p=>p.name.toLowerCase().includes(val));
+displayProducts(filtered);
+}
+
+function filterProducts(){
+let cat = document.getElementById("categoryFilter").value;
+if(cat === "all") return displayProducts(products);
+let filtered = products.filter(p=>p.category === cat);
+displayProducts(filtered);
+}
+
+function addToCart(i){
+cart.push(products[i]);
+document.getElementById("cart-count").innerText = cart.length;
+updateCart();
+}
+
+function updateCart(){
+let html="";
+cart.forEach(p=> html += `<li>${p.name} - ₱${p.price}</li>`);
+document.getElementById("cart").innerHTML = html;
+}
+
+function checkout(){
+if(cart.length===0) return alert("Cart is empty");
+document.getElementById("orderStatus").innerText = "Order placed! Status: Processing";
+cart=[];
+updateCart();
+}
+
+function submitReview(){
+let text = document.getElementById("review").value;
+if(text==="") return;
+document.getElementById("reviews").innerHTML += `<li>${text}</li>`;
+document.getElementById("review").value="";
+}
+
+function openLogin(){document.getElementById("loginModal").style.display="flex";}
+function closeLogin(){document.getElementById("loginModal").style.display="none";}
+
+displayProducts(products);
+</script>
+
+</body>
+</html>
+
